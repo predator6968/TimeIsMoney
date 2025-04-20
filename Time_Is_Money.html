@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Dashboard</title>
+  <style>
+    :root {
+      --primary-yellow: #FFCC00;
+      --dark-bg: #000;
+      --card-bg: #1A1A1A;
+      --text-light: #FFF;
+      --text-muted: #BBB;
+      --nav-width: 200px;
+      --header-height: 60px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      background: var(--dark-bg);
+      color: var(--text-light);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      height: var(--header-height);
+      background: var(--primary-yellow);
+      color: var(--dark-bg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+    }
+    #bankName { font-weight: bold; font-size: 1.5rem; }
+    #editNameBtn {
+      background: none;
+      border: none;
+      color: var(--dark-bg);
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+    .fullscreen-btn {
+      background: var(--dark-bg);
+      color: var(--primary-yellow);
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    nav {
+      width: var(--nav-width);
+      background: var(--card-bg);
+      padding-top: 1rem;
+      border-right: 1px solid #333;
+    }
+    nav ul { list-style: none; }
+    nav li {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    nav li.active,
+    nav li:hover {
+      background: #333;
+      color: var(--text-light);
+    }
+    main {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+    }
+    /* Dashboard view */
+    #dashboard.section {
+      display: none;
+    }
+    #dashboard.section.active {
+      display: flex;
+      flex: 1;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+    }
+    /* Payments view */
+    #payments.section {
+      display: none;
+      overflow: auto;
+      padding: 1rem;
+      flex: 1;
+    }
+    #payments.section.active {
+      display: block;
+    }
+    .account-card {
+      background: var(--card-bg);
+      border: 2px solid var(--primary-yellow);
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      /* fill remaining space minus nav and header */
+      width: calc(100% - var(--nav-width));
+      height: calc(100% - var(--header-height));
+      margin-top: 0;
+      position: relative;
+    }
+    .account-card .toggle-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--primary-yellow);
+      color: var(--dark-bg);
+      border: none;
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Style the Clear History button */
+    #clearHistory {
+      background: var(--primary-yellow);
+      color: var(--dark-bg);
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+    .account-card h2 {
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .account-card h1 {
+      /* Larger flexible font: min 15rem, ideal 40vw, max 60rem */
+      font-size: clamp(15rem, 40vw, 60rem);
+      color: var(--primary-yellow);
+      margin: 0;
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .account-card h3 {
+      color: var(--text-muted);
+      margin-top: 1rem;
+      font-size: 1.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 0.5rem;
+      text-align: center;
+      color: var(--text-light);
+      font-size: 0.875rem;
+    }
+    th { background: #333; }
+    .date-header td {
+      background: var(--primary-yellow);
+      color: var(--dark-bg);
+      text-align: left;
+      font-weight: bold;
+      padding-left: 0.5rem;
+    }
+    footer {
+      background: var(--card-bg);
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <span id="bankName">Bank Name</span>
+      <button id="editNameBtn" title="Edit Bank Name">✏️</button>
+    </div>
+    <button id="fullscreenBtn" class="fullscreen-btn">Full Screen</button>
+  </header>
+  <div class="container">
+    <nav>
+      <ul>
+        <li id="tab-dashboard" class="active">Dashboard</li>
+        <li id="tab-payments">Payments</li>
+      </ul>
+    </nav>
+    <main>
+      <div id="dashboard" class="section active">
+        <div class="account-card">
+          <button id="toggleBtn" class="toggle-btn">Pause</button>
+          <h2>Remaining Balance (€)</h2>
+          <h1 id="balanceDisplay">€0</h1>
+          <h3 id="savedDisplay">Saved: €0</h3>
+        </div>
+      </div>
+      <div id="payments" class="section">
+        <button id="clearHistory" class="toggle-btn">Clear History</button>
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Time</th><th>Remaining</th><th>Saved</th><th>Spent</th></tr>
+          </thead>
+          <tbody id="paymentsBody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <footer>&copy; <span id="footerYear"></span> <span id="footerBank"></span></footer>
+  <script>
+    // Initialization & utilities
+    const STORAGE_KEY = 'bank-dashboard-history';
+    const NAME_KEY = 'bank-dashboard-name';
+    const DAY_SEC = 86400;
+
+    const bankNameEl = document.getElementById('bankName');
+    const editBtn = document.getElementById('editNameBtn');
+    const footerBankEl = document.getElementById('footerBank');
+    const footerYearEl = document.getElementById('footerYear');
+    const balanceEl = document.getElementById('balanceDisplay');
+    const savedEl = document.getElementById('savedDisplay');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const paymentsBody = document.getElementById('paymentsBody');
+    const clearBtn = document.getElementById('clearHistory');
+    const fullBtn = document.getElementById('fullscreenBtn');
+    const tabs = {
+      dash: document.getElementById('tab-dashboard'),
+      pay: document.getElementById('tab-payments')
+    };
+    const secs = {
+      dash: document.getElementById('dashboard'),
+      pay: document.getElementById('payments')
+    };
+
+    let isPaused = false;
+    let savedTotal = 0;
+    let historyData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+    function loadBankName() {
+      const name = localStorage.getItem(NAME_KEY) || 'Bank Name';
+      bankNameEl.textContent = name;
+      footerBankEl.textContent = name;
+    }
+    editBtn.onclick = () => { bankNameEl.contentEditable = true; bankNameEl.focus(); };
+    bankNameEl.addEventListener('blur', () => {
+      bankNameEl.contentEditable = false;
+      const name = bankNameEl.textContent.trim() || 'Bank Name';
+      footerBankEl.textContent = name;
+      localStorage.setItem(NAME_KEY, name);
+    });
+
+    function calcRemaining() {
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      return Math.max(0, Math.floor((end - now) / 1000));
+    }
+
+    function loadSaved() {
+      const d = new Date();
+      const key = `saved-${d.getDate()}-${d.getMonth()}-${d.getFullYear()}`;
+      const v = parseInt(localStorage.getItem(key));
+      return isNaN(v) ? 0 : v;
+    }
+    function saveSaved(v) {
+      const d = new Date();
+      const key = `saved-${d.getDate()}-${d.getMonth()}-${d.getFullYear()}`;
+      localStorage.setItem(key, v);
+    }
+    function clearSaved() {
+      const d = new Date();
+      const key = `saved-${d.getDate()}-${d.getMonth()}-${d.getFullYear()}`;
+      localStorage.removeItem(key);
+    }
+
+    function initSaved() {
+      const d = new Date();
+      const dateKey = `${d.getDate()} ${d.toLocaleString('en-GB', { month: 'long' })} ${d.getFullYear()}`;
+      const histSum = historyData
+        .filter(e => e.date === dateKey)
+        .reduce((s, e) => s + e.saved, 0);
+      savedTotal = histSum + loadSaved();
+    }
+
+    function adjustFontSize() {
+      const card = document.querySelector('.account-card');
+      const txt = balanceEl;
+      const style = getComputedStyle(card);
+      const padX = parseFloat(style.paddingLeft) * 2;
+      const padY = parseFloat(style.paddingTop) * 2;
+      const availableH = card.clientHeight - padY - 80; // space for h2 + h3
+      const availableW = card.clientWidth - padX;
+      const len = txt.innerText.length;
+      const size = Math.min(availableW / len, availableH);
+      txt.style.fontSize = size + 'px';
+    }
+
+    function update() {
+      const rem = calcRemaining();
+      if (isPaused) {
+        savedTotal++;
+        saveSaved(savedTotal);
+      }
+      balanceEl.textContent = `€${rem.toLocaleString()}`;
+      savedEl.textContent = `Saved: €${savedTotal.toLocaleString()}`;
+      adjustFontSize();
+    }
+    setInterval(update, 1000);
+
+    toggleBtn.onclick = () => {
+      const now = new Date();
+      const dateKey = `${now.getDate()} ${now.toLocaleString('en-GB', { month: 'long' })} ${now.getFullYear()}`;
+      if (!isPaused) {
+        isPaused = true;
+        initSaved();
+        toggleBtn.textContent = 'Resume';
+      } else {
+        isPaused = false;
+        toggleBtn.textContent = 'Pause';
+        const timeStr = now.toLocaleTimeString('en-GB');
+        const rem = calcRemaining();
+        const spent = DAY_SEC - rem;
+        const prev = historyData
+          .filter(e => e.date === dateKey)
+          .reduce((s, e) => s + e.saved, 0);
+        const inc = savedTotal - prev;
+        historyData.push({ date: dateKey, time: timeStr, remaining: rem, saved: inc, spent });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(historyData));
+        clearSaved();
+        renderHistory();
+      }
+    };
+
+    clearBtn.onclick = () => {
+      historyData = [];
+      localStorage.removeItem(STORAGE_KEY);
+      clearSaved();
+      renderHistory();
+    };
+
+    function renderHistory() {
+      paymentsBody.innerHTML = '';
+      let last = '';
+      historyData.forEach(e => {
+        if (e.date !== last) {
+          last = e.date;
+          const tr = document.createElement('tr');
+          tr.classList.add('date-header');
+          tr.innerHTML = `<td colspan="5">${e.date}</td>`;
+          paymentsBody.appendChild(tr);
+        }
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${e.date}</td>
+          <td>${e.time}</td>
+          <td>€${e.remaining.toLocaleString()}</td>
+          <td>€${e.saved.toLocaleString()}</td>
+          <td>€${e.spent.toLocaleString()}</td>
+        `;
+        paymentsBody.appendChild(tr);
+      });
+    }
+
+    fullBtn.onclick = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        fullBtn.textContent = 'Exit Full Screen';
+      } else {
+        document.exitFullscreen();
+        fullBtn.textContent = 'Full Screen';
+      }
+    };
+
+    tabs.dash.onclick = () => switchTab('dash');
+    tabs.pay.onclick = () => { switchTab('pay'); renderHistory(); };
+    function switchTab(n) {
+      Object.values(tabs).forEach(x => x.classList.remove('active'));
+      Object.values(secs).forEach(x => x.classList.remove('active'));
+      tabs[n].classList.add('active');
+      secs[n].classList.add('active');
+    }
+
+    footerYearEl.textContent = new Date().getFullYear();
+    loadBankName();
+    initSaved();
+    renderHistory();
+    window.addEventListener('resize', adjustFontSize);
+  </script>
+</body>
+</html>
